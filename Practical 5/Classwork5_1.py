@@ -7,14 +7,24 @@ from mpl_toolkits.mplot3d import Axes3D
 class SolarSystem():
     def __init__(self):
         self.size = 100000
+        self.stars = []
         self.planets = []
         self.fig = plt.figure()
         self.ax = Axes3D(self.fig, auto_add_to_figure=False)
         self.fig.add_axes(self.ax)
         self.dT = 1
 
+    def new_star(self, star):
+        self.stars.append(star)
+
     def new_planet(self, planet):
         self.planets.append(planet)
+
+    def update_stars(self):
+        self.ax.clear()
+        for star in self.stars:
+            star.move()
+            star.draw()
 
     def update_planets(self):
         self.ax.clear()
@@ -27,11 +37,18 @@ class SolarSystem():
         self.ax.set_ylim((-self.size / 2, self.size / 2))
         self.ax.set_zlim((-self.size / 2, self.size / 2))
 
-    def gravity_planets(self):
-        for i, first in enumerate(self.planets):
-            for second in self.planets[i + 1:]:
+    def gravity_stars(self):
+        for i, first in enumerate(self.stars):
+            for second in self.stars[i + 1:]:
                 first.gravity(second)
 
+    def gravity_planets(self):
+        for planet in self.planets:
+            for star in self.stars:
+                planet.gravity(star)
+                for other_planet in self.planets:
+                    if other_planet != planet:
+                        planet.gravity(other_planet)
 
 class Planet():
     def __init__(self, SolarSys, mass, position=(0, 0, 0), velocity=(0, 0, 0)):
@@ -70,18 +87,18 @@ class Planet():
             switch *= -1
 
 
-class Sun(Planet):
+class Star(Planet):
     def __init__(self,
                  SolarSys,
                  mass=10000,
                  position=(0, 0, 0),
                  velocity=(0, 0, 0)
                  ):
-        super(Sun, self).__init__(SolarSys, mass, position, velocity)
+        super(Star, self).__init__(SolarSys, mass, position, velocity)
         self.color = 'yellow'
 
-    # def move(self):
-    # self.position = self.position
+    def move(self):
+        self.position = self.position
 
 
 def alignsuns(m1, m2, r, t):
@@ -96,18 +113,19 @@ def alignsuns(m1, m2, r, t):
 
 SolarSys = SolarSystem()
 
-planet1 = Planet(SolarSys, mass=0.1, position=(40000, 0, 0), velocity=(0, 0, 0))
-planet2 = Planet(SolarSys, mass=0.1, position=(-40000, 0, 0), velocity=(0, 0, 0))
+planet1 = Planet(SolarSys, mass=0.1, position=(4000, 0, 0), velocity=(0, 0, 0))
+planet2 = Planet(SolarSys, mass=0.1, position=(-4000, 0, 0), velocity=(0, 0, 0))
 
-data = alignsuns(10000, 10000, 4000, 100)
-sun1 = Sun(SolarSys, position=data[0], velocity=data[2])
-sun2 = Sun(SolarSys, position=data[1], velocity=data[3])
+data = alignsuns(10000, 10000, 4000, 1000)
+sun1 = Star(SolarSys, position=data[0], velocity=data[2])
+sun2 = Star(SolarSys, position=data[1], velocity=data[3])
 
 
 def animate(j):
-    # print('The frame is:', j)
     SolarSys.gravity_planets()
+    #SolarSys.gravity_stars()
     SolarSys.update_planets()
+    #SolarSys.update_stars()
     SolarSys.fix_axes()
 
 
@@ -115,4 +133,4 @@ anim = animation.FuncAnimation(SolarSys.fig, animate, frames=500, interval=100)
 
 writervideo = animation.FFMpegWriter(fps=60)
 
-anim.save("planets_animation2.mp4", writer=writervideo, dpi=200)
+anim.save("binary2.mp4", writer=writervideo, dpi=200)
